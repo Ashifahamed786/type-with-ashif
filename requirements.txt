@@ -8,3 +8,6 @@ gunicorn
 gevent
 gevent-websocket
 packaging
+Flask
+Flask-SocketIO
+Flask-SQLAlchemy
