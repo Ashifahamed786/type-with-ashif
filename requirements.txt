@@ -7,3 +7,4 @@ google-genai>=1.0.0
 gunicorn
 gevent
 gevent-websocket
+packaging
