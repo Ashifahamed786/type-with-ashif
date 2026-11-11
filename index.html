@@ -796,21 +796,7 @@
 
   <script src="https://cdn.socket.io/4.8.4/socket.io.min.js"></script>
   <script>
-    // Local development talks to Flask; static production builds stay same-origin
-    // and keep backend-only features dormant unless a backend is configured.
-    const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1']);
-    const IS_LOCAL_HOST = LOCAL_HOSTNAMES.has(window.location.hostname);
-    const configuredApiBase = String(
-      window.TYPE_WITH_ASHIF_API_BASE || document.documentElement.dataset.apiBaseUrl || ''
-    ).trim().replace(/\/+$/, '');
-    const API_BASE_URL = IS_LOCAL_HOST ? `http://${window.location.hostname}:5000` : configuredApiBase;
-    const BACKEND_FEATURES_ENABLED = IS_LOCAL_HOST || Boolean(configuredApiBase) ||
-      document.documentElement.dataset.backendEnabled === 'true';
-
-    function apiUrl(path) {
-      const endpoint = path.startsWith('/') ? path : `/${path}`;
-      return `${API_BASE_URL}${endpoint}`;
-    }
+   const socket = io();
 
     // Dictionary source
     const WORD_LIST = [
