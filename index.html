@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="matrix">
+<html lang="en" data-theme="matrix" data-backend-enabled="false">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -794,10 +794,23 @@
     <div>TYPE WITH ASHIF v1.0</div>
   </footer>
 
-<script src="https://cdn.socket.io/4.8.4/socket.io.min.js"></script>
-<script>
-    const socket = io(window.location.origin);
-</script>
+  <script src="https://cdn.socket.io/4.8.4/socket.io.min.js"></script>
+  <script>
+    // Use the current host by default so Flask, local and Railway deployments
+    // share the same API and Socket.IO origin. Set a base only for a separate API.
+    const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1']);
+    const IS_LOCAL_HOST = LOCAL_HOSTNAMES.has(window.location.hostname);
+    const configuredApiBase = String(
+      window.TYPE_WITH_ASHIF_API_BASE || document.documentElement.dataset.apiBaseUrl || ''
+    ).trim().replace(/\/+$/, '');
+    const API_BASE_URL = configuredApiBase || window.location.origin;
+    const BACKEND_FEATURES_ENABLED = IS_LOCAL_HOST || Boolean(configuredApiBase) ||
+      document.documentElement.dataset.backendEnabled === 'true';
+
+    function apiUrl(path) {
+      const endpoint = path.startsWith('/') ? path : `/${path}`;
+      return `${API_BASE_URL}${endpoint}`;
+    }
 
     // Dictionary source
     const WORD_LIST = [
@@ -2431,9 +2444,9 @@
       } catch (error) {
         accountMessage.textContent = error instanceof TypeError
           ? (window.location.protocol === 'file:'
-            ? 'This page is open as a file. Open http://127.0.0.1:5000/ to use account features.'
+            ? 'This page is open as a file. Start Flask and open the local URL shown in the terminal to use account features.'
             : IS_LOCAL_HOST
-              ? 'Flask is not reachable. Start the app with `python app.py` and open http://127.0.0.1:5000/.'
+              ? 'Flask is not reachable. Start the app with python app.py and open the local URL shown in the terminal.'
               : 'The account service is unavailable right now.')
           : error.message;
       }

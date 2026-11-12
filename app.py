@@ -1,6 +1,7 @@
 import os
 import math
 import secrets
+import socket as network_socket
 import string
 import threading
 import time
@@ -23,16 +24,26 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.getenv("COOKIE_SECURE", "0") == "1"
 db = SQLAlchemy(app)
-local_socket_origins = ["http://localhost:5000", "http://127.0.0.1:5000"]
 configured_socket_origins = [
     origin.strip().rstrip("/")
     for origin in os.getenv("SOCKETIO_CORS_ALLOWED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+socket_cors_origins = None
+if configured_socket_origins:
+    local_socket_origins = [
+        "http://localhost:5000", "http://127.0.0.1:5000",
+        "http://localhost:5001", "http://127.0.0.1:5001",
+    ]
+    railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+    railway_socket_origins = [f"https://{railway_domain}"] if railway_domain else []
+    socket_cors_origins = list(dict.fromkeys(
+        local_socket_origins + railway_socket_origins + configured_socket_origins
+    ))
 socketio = SocketIO(
     app,
     async_mode="threading",
-    cors_allowed_origins=list(dict.fromkeys(local_socket_origins + configured_socket_origins)),
+    cors_allowed_origins=socket_cors_origins,
 )
 
 challenge_rooms = {}
@@ -522,6 +533,20 @@ with app.app_context():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+    if "PORT" not in os.environ:
+        requested_port = port
+        for candidate in range(requested_port, requested_port + 20):
+            with network_socket.socket(network_socket.AF_INET, network_socket.SOCK_STREAM) as probe:
+                try:
+                    probe.bind(("0.0.0.0", candidate))
+                except OSError:
+                    continue
+                port = candidate
+                break
+        else:
+            raise OSError(f"No free local port found between {requested_port} and {requested_port + 19}.")
+        if port != requested_port:
+            app.logger.warning("Port %s is busy; using local port %s instead.", requested_port, port)
     socketio.run(
         app,
         host="0.0.0.0",

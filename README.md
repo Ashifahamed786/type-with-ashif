@@ -40,6 +40,8 @@ python app.py
 
 Open http://127.0.0.1:5000
 
+If port 5000 is already in use locally, `python app.py` automatically chooses a free port and prints it in the startup log; open the printed address instead. Railway's `PORT` value is always used as provided.
+
 If the frontend and Flask backend are hosted on separate domains, set
 `SOCKETIO_CORS_ALLOWED_ORIGINS` in the backend environment to the exact
 frontend origin or comma-separated origins (for example,
